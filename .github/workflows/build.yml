@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          mkdir project
+          unzip -q Kasirku-main.zip -d project
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Find Gradle project
+        run: |
+          find project -name gradlew -type f -print
+
+      - name: Build APK
+        run: |
+          GRADLEW=$(find project -name gradlew -type f | head -n 1)
+          chmod +x "$GRADLEW"
+          cd "$(dirname "$GRADLEW")"
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kasirku-APK
+          path: |
+            project/**/build/outputs/apk/**/*.apk
